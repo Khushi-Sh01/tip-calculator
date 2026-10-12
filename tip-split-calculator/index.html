@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tip &amp; Split Bill Calculator</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg-0: #ffffff;
+      --bg-1: #ffffff;
+      --card: #ffffff;
+      --card-inner: #f8fafc;
+      --line: rgba(15, 23, 42, 0.1);
+      --text: #0f172a;
+      --muted: #64748b;
+      --label: #334155;
+      --accent: #0d9488;
+      --accent-strong: #0f766e;
+      --accent-soft: rgba(13, 148, 136, 0.12);
+      --on-accent: #04221d;
+      --input-bg: #ffffff;
+      --btn-bg: #f1f5f9;
+      --btn-hover: #e2e8f0;
+      --warn: #b45309;
+      --glow: rgba(13, 148, 136, 0.08);
+      --shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+      --radius: 22px;
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg-0: #07111c;
+      --bg-1: #0c1a2b;
+      --card: #122033;
+      --card-inner: #0b1828;
+      --line: rgba(148, 163, 184, 0.16);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --label: #cbd5e1;
+      --accent: #2dd4bf;
+      --accent-strong: #14b8a6;
+      --accent-soft: rgba(45, 212, 191, 0.12);
+      --on-accent: #04221d;
+      --input-bg: #081420;
+      --btn-bg: #0a1624;
+      --btn-hover: #102033;
+      --warn: #fbbf24;
+      --glow: rgba(45, 212, 191, 0.08);
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      font-family: "Segoe UI", Inter, ui-sans-serif, system-ui, sans-serif;
+      color: var(--text);
+      background: var(--bg-0);
+      display: grid;
+      place-items: center;
+      padding: 32px 16px;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    html[data-theme="dark"] body {
+      background:
+        radial-gradient(1200px 600px at 85% -10%, rgba(45, 212, 191, 0.18), transparent 50%),
+        radial-gradient(900px 500px at -10% 110%, rgba(56, 189, 248, 0.12), transparent 45%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1));
+    }
+
+    .app {
+      width: min(920px, 100%);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 28%), var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 28px 28px 12px;
+    }
+
+    .theme-toggle {
+      flex-shrink: 0;
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--btn-bg);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+
+    .theme-toggle:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 3vw, 2.1rem);
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 20px;
+      padding: 16px 28px 28px;
+    }
+
+    .panel, .results {
+      background: var(--card-inner);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+    }
+
+    label, .label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 650;
+      color: var(--label);
+      margin-bottom: 8px;
+    }
+
+    .field {
+      margin-bottom: 22px;
+    }
+
+    .bill-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--input-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0 14px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bill-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .currency {
+      color: var(--accent);
+      font-weight: 750;
+      font-size: 1.2rem;
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 1.35rem;
+      padding: 14px 0;
+    }
+
+    .tips {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .tip-btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--btn-bg);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px 8px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+
+    .tip-btn:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      background: var(--btn-hover);
+    }
+
+    .tip-btn.active {
+      background: var(--accent);
+      color: var(--on-accent);
+      border-color: var(--accent);
+    }
+
+    .custom-tip {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+      background: var(--input-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0 12px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .custom-tip:focus-within,
+    .custom-tip.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .custom-tip input {
+      font-size: 1rem;
+      padding: 12px 0;
+    }
+
+    .suffix {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .people-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      height: 6px;
+    }
+
+    .people-count {
+      width: 72px;
+      text-align: center;
+      background: var(--input-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 8px;
+      font-size: 1.05rem;
+    }
+
+    .results {
+      display: flex;
+      flex-direction: column;
+      background:
+        linear-gradient(180deg, var(--glow), transparent 30%),
+        var(--card-inner);
+    }
+
+    .stat {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .stat:last-of-type {
+      border-bottom: 0;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.7rem;
+      letter-spacing: -0.03em;
+    }
+
+    .grand strong {
+      color: var(--accent);
+      font-size: 2.05rem;
+    }
+
+    .formula {
+      margin-top: auto;
+      padding-top: 16px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.55;
+    }
+
+    .error, .note {
+      min-height: 1.2em;
+      margin: 8px 0 0;
+      font-size: 0.8rem;
+    }
+
+    .error {
+      color: var(--warn);
+    }
+
+    .reset {
+      margin-top: 18px;
+      width: 100%;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 12px;
+      padding: 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    }
+
+    .reset:hover {
+      color: var(--text);
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    @media (max-width: 760px) {
+      .layout {
+        grid-template-columns: 1fr;
+        padding: 12px 16px 20px;
+      }
+
+      .header {
+        padding: 22px 16px 8px;
+      }
+
+      .theme-toggle {
+        padding: 8px 12px;
+      }
+
+      .tips {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <div>
+        <p class="eyebrow">Split evenly</p>
+        <h1>Tip &amp; Split Bill Calculator</h1>
+        <p class="subtitle">Enter the bill, pick a tip, and split across everyone. Totals update as you type.</p>
+      </div>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-pressed="false">
+        Dark mode
+      </button>
+    </header>
+
+    <section class="layout">
+      <form class="panel" id="calc-form" novalidate>
+        <div class="field">
+          <label for="bill">Bill amount</label>
+          <div class="bill-wrap">
+            <span class="currency" aria-hidden="true">$</span>
+            <input id="bill" name="bill" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" value="86.40" />
+          </div>
+          <p class="error" id="bill-error" role="status"></p>
+        </div>
+
+        <div class="field">
+          <span class="label" id="tip-label">Tip percentage</span>
+          <div class="tips" role="group" aria-labelledby="tip-label">
+            <button type="button" class="tip-btn" data-tip="10">10%</button>
+            <button type="button" class="tip-btn active" data-tip="15">15%</button>
+            <button type="button" class="tip-btn" data-tip="20">20%</button>
+            <button type="button" class="tip-btn" data-tip="25">25%</button>
+          </div>
+          <div class="custom-tip" id="custom-wrap">
+            <input id="custom-tip" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="Custom tip" aria-label="Custom tip percentage" />
+            <span class="suffix">%</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="people-range">Number of people</label>
+          <div class="people-row">
+            <input id="people-range" type="range" min="1" max="20" value="4" />
+            <input id="people" class="people-count" type="number" min="1" max="99" value="4" aria-label="People count" />
+          </div>
+          <p class="error" id="people-error" role="status"></p>
+        </div>
+      </form>
+
+      <aside class="results" aria-live="polite">
+        <div class="stat">
+          <span>Tip amount / person</span>
+          <strong id="tip-pp">$0.00</strong>
+        </div>
+        <div class="stat">
+          <span>Total / person</span>
+          <strong id="total-pp">$0.00</strong>
+        </div>
+        <div class="stat grand">
+          <span>Grand total</span>
+          <strong id="grand">$0.00</strong>
+        </div>
+        <p class="formula" id="formula"></p>
+        <p class="note" id="note"></p>
+        <button class="reset" type="button" id="reset">Reset</button>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const money = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    });
+
+    const billInput = document.getElementById("bill");
+    const customTip = document.getElementById("custom-tip");
+    const customWrap = document.getElementById("custom-wrap");
+    const peopleRange = document.getElementById("people-range");
+    const peopleInput = document.getElementById("people");
+    const tipButtons = [...document.querySelectorAll(".tip-btn")];
+    const billError = document.getElementById("bill-error");
+    const peopleError = document.getElementById("people-error");
+
+    let selectedTip = 15;
+    let usingCustom = false;
+
+    function toCents(raw) {
+      const n = Number.parseFloat(raw);
+      if (!Number.isFinite(n) || n < 0) return null;
+      return Math.round(n * 100);
+    }
+
+    function roundHalfUp(value) {
+      return Math.sign(value) * Math.floor(Math.abs(value) + 0.5);
+    }
+
+    function setPeople(value) {
+      const n = Math.min(99, Math.max(1, Math.trunc(Number(value) || 1)));
+      peopleInput.value = String(n);
+      peopleRange.value = String(Math.min(20, n));
+      return n;
+    }
+
+    function calculate() {
+      const billCents = toCents(billInput.value);
+      const people = Number.parseInt(peopleInput.value, 10);
+      let tipPercent = usingCustom ? Number.parseFloat(customTip.value) : selectedTip;
+
+      billError.textContent = "";
+      peopleError.textContent = "";
+
+      if (billCents === null) {
+        billError.textContent = "Enter a valid bill of $0.00 or more.";
+      }
+      if (!Number.isInteger(people) || people < 1) {
+        peopleError.textContent = "Split with at least 1 person.";
+      }
+      if (!Number.isFinite(tipPercent) || tipPercent < 0) {
+        tipPercent = 0;
+      }
+      if (tipPercent > 100) {
+        tipPercent = 100;
+        if (usingCustom) customTip.value = "100";
+      }
+
+      const safeBill = billCents ?? 0;
+      const safePeople = Number.isInteger(people) && people > 0 ? people : 1;
+      const tipCents = roundHalfUp((safeBill * tipPercent) / 100);
+      const grandCents = safeBill + tipCents;
+      const tipPerPerson = roundHalfUp(tipCents / safePeople);
+      const totalPerPerson = roundHalfUp(grandCents / safePeople);
+
+      document.getElementById("tip-pp").textContent = money.format(tipPerPerson / 100);
+      document.getElementById("total-pp").textContent = money.format(totalPerPerson / 100);
+      document.getElementById("grand").textContent = money.format(grandCents / 100);
+      document.getElementById("formula").textContent =
+        `Tip ${tipPercent}% of ${money.format(safeBill / 100)} = ${money.format(tipCents / 100)}. Split ${safePeople} way${safePeople === 1 ? "" : "s"}.`;
+
+      const reconstructed = totalPerPerson * safePeople;
+      const remainder = grandCents - reconstructed;
+      document.getElementById("note").textContent =
+        remainder === 0
+          ? ""
+          : `Per-person totals are rounded to the nearest cent (difference of ${money.format(Math.abs(remainder) / 100)}).`;
+    }
+
+    function selectPreset(percent) {
+      usingCustom = false;
+      selectedTip = percent;
+      customWrap.classList.remove("active");
+      tipButtons.forEach((btn) => {
+        btn.classList.toggle("active", Number(btn.dataset.tip) === percent);
+      });
+      calculate();
+    }
+
+    tipButtons.forEach((btn) => {
+      btn.addEventListener("click", () => selectPreset(Number(btn.dataset.tip)));
+    });
+
+    customTip.addEventListener("input", () => {
+      usingCustom = customTip.value !== "";
+      customWrap.classList.toggle("active", usingCustom);
+      tipButtons.forEach((btn) => btn.classList.remove("active"));
+      calculate();
+    });
+
+    billInput.addEventListener("input", calculate);
+
+    peopleRange.addEventListener("input", () => {
+      setPeople(peopleRange.value);
+      calculate();
+    });
+
+    peopleInput.addEventListener("input", () => {
+      setPeople(peopleInput.value);
+      calculate();
+    });
+
+    document.getElementById("reset").addEventListener("click", () => {
+      billInput.value = "0.00";
+      customTip.value = "";
+      setPeople(1);
+      selectPreset(15);
+    });
+
+    const themeToggle = document.getElementById("theme-toggle");
+    const THEME_KEY = "tip-split-theme";
+
+    function applyTheme(theme) {
+      const isDark = theme === "dark";
+      document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+      themeToggle.setAttribute("aria-pressed", String(isDark));
+      themeToggle.textContent = isDark ? "Light mode" : "Dark mode";
+      localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+    }
+
+    applyTheme(localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light");
+    themeToggle.addEventListener("click", () => {
+      const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      applyTheme(next);
+    });
+
+    calculate();
+  </script>
+</body>
+</html>
